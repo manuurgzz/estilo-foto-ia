@@ -26,7 +26,11 @@
   *{box-sizing:border-box}
   html,body{margin:0}
   body{
-    background:var(--bg);
+    background:
+      radial-gradient(900px 480px at 85% -10%,rgba(224,164,88,.10),transparent 70%),
+      radial-gradient(700px 400px at -10% 10%,rgba(110,140,220,.07),transparent 70%),
+      var(--bg);
+    background-attachment:fixed;
     color:var(--text);
     font-family:var(--sans);
     font-size:15px;
@@ -35,6 +39,7 @@
     font-weight:450;
   }
   img{display:block}
+  [hidden]{display:none!important}
   button,input,textarea{font:inherit;color:inherit}
 
   .wrap{max-width:var(--maxw);margin:0 auto;padding:clamp(28px,5vw,72px) clamp(18px,4vw,32px) 80px}
@@ -61,7 +66,7 @@
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
     text-align:center;cursor:pointer;transition:border-color .18s,background-color .18s;
   }
-  .zone:hover{border-color:rgba(255,255,255,.3)}
+  .zone:hover{border-color:rgba(255,255,255,.3);background:var(--surface-2)}
   .zone.is-over{border-color:var(--accent);background:rgba(224,164,88,.07)}
   .zone.is-filled{border-style:solid;border-color:var(--line);padding:0;overflow:hidden;align-items:stretch;justify-content:stretch}
   .zone:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
@@ -119,6 +124,31 @@
   }
   input[type=range]:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:999px}
 
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .chip{
+    border:1px solid var(--line);background:none;color:var(--muted);border-radius:999px;
+    padding:5px 12px;font-size:13px;cursor:pointer;transition:color .15s,border-color .15s,background-color .15s;
+  }
+  .chip:hover{color:var(--text);border-color:var(--line-strong);background:rgba(255,255,255,.04)}
+  .chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  .score{
+    margin-top:22px;padding:18px 20px;border:1px solid var(--line);border-radius:14px;background:var(--surface);
+    display:flex;align-items:center;gap:18px;flex-wrap:wrap;
+  }
+  .score-num{font-family:var(--serif);font-size:38px;line-height:1;letter-spacing:-.02em;color:var(--accent)}
+  .score-num.flat{color:var(--muted)}
+  .score-text{color:var(--muted);font-size:14px;max-width:46ch}
+  .score-text b{color:var(--text);font-weight:500}
+
+  .recipe{display:flex;flex-wrap:wrap;gap:6px 8px}
+  .recipe span{
+    font-family:var(--mono);font-size:12px;padding:3px 9px;border-radius:999px;
+    background:rgba(255,255,255,.06);color:var(--text);
+  }
+  .recipe span em{font-style:normal;color:var(--muted);margin-right:6px}
+  .recipe .none{background:none;color:var(--muted);padding:0}
+
   .actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:24px}
   .btn{
     border:1px solid transparent;border-radius:999px;padding:12px 24px;cursor:pointer;
@@ -127,6 +157,7 @@
   }
   .btn-primary{background:var(--text);color:#0c0d0f}
   .btn-primary:hover{opacity:.88}
+  .btn:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
   .btn-ghost{background:none;color:var(--text);border-color:var(--line-strong)}
   .btn-ghost:hover{background:rgba(255,255,255,.05)}
   .btn[disabled],.btn[aria-disabled="true"]{opacity:.5;pointer-events:none}
@@ -171,7 +202,7 @@
   .meta{margin:22px 0 0;display:grid;gap:2px}
   .meta dt{color:var(--muted);font-size:12px;letter-spacing:.12em;text-transform:uppercase}
   .meta dd{margin:2px 0 0;font-family:var(--mono);font-size:13px;color:var(--text);word-break:break-word}
-  .meta div{display:grid;grid-template-columns:minmax(150px,.4fr) 1fr;gap:14px;align-items:baseline;padding:10px 0;border-top:1px solid var(--line)}
+  .meta > div{display:grid;grid-template-columns:minmax(150px,.4fr) 1fr;gap:14px;align-items:baseline;padding:10px 0;border-top:1px solid var(--line)}
   .meter{display:inline-block;vertical-align:middle;width:min(220px,42%);height:4px;border-radius:999px;background:rgba(255,255,255,.14);margin-left:10px;overflow:hidden}
   .meter i{display:block;height:100%;border-radius:999px;background:var(--muted)}
   .meter i.good{background:var(--accent)}
@@ -179,8 +210,9 @@
   footer{margin-top:56px;color:var(--muted);font-size:13px;border-top:1px solid var(--line);padding-top:18px}
 
   @media (max-width:640px){
-    .meta div{grid-template-columns:1fr;gap:2px}
+    .meta > div{grid-template-columns:1fr;gap:2px}
     .meter{display:none}
+    .score-num{font-size:32px}
     .slider-row{flex-wrap:wrap}
     output{margin-left:0}
     input[type=range]{flex:1 1 100%}
@@ -226,6 +258,13 @@
   <section class="panel">
     <span class="field-label" id="label-text">Petición</span>
     <textarea id="text" placeholder="más cálido, contraste de película, menos saturación…" aria-labelledby="label-text"></textarea>
+    <div class="chips" id="chips" aria-label="Sugerencias de petición">
+      <button type="button" class="chip">más cálido</button>
+      <button type="button" class="chip">contraste de película</button>
+      <button type="button" class="chip">menos saturación</button>
+      <button type="button" class="chip">sombras más suaves</button>
+      <button type="button" class="chip">con grano</button>
+    </div>
 
     <div class="slider-row">
       <label for="strength">Intensidad</label>
@@ -258,10 +297,16 @@
       <input type="range" id="cmp-range" min="0" max="100" step="0.5" value="50">
     </div>
 
+    <div class="score" id="score" hidden>
+      <span class="score-num" id="score-num">—</span>
+      <p class="score-text" id="score-text"></p>
+    </div>
+
     <dl class="meta">
-      <div><dt>Nota</dt><dd id="note">—</dd></div>
-      <div><dt>X-Dist-Before</dt><dd id="dist-before">—</dd></div>
-      <div><dt>X-Dist-After</dt><dd id="dist-after">—</dd></div>
+      <div><dt>Motor</dt><dd id="note">—</dd></div>
+      <div><dt>Receta aplicada</dt><dd><div class="recipe" id="recipe"></div></dd></div>
+      <div><dt>Distancia antes</dt><dd id="dist-before">—</dd></div>
+      <div><dt>Distancia después</dt><dd id="dist-after">—</dd></div>
     </dl>
 
     <div class="actions">
@@ -269,7 +314,7 @@
     </div>
   </section>
 
-  <footer>POST a <code>http://localhost:8000/edit</code> · campos <code>photo</code>, <code>reference</code>, <code>text</code>, <code>strength</code></footer>
+  <footer>POST a <code id="endpoint">/edit</code> · campos <code>photo</code>, <code>reference</code>, <code>text</code>, <code>strength</code></footer>
 </main>
 
 <script>
@@ -277,7 +322,9 @@
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
 
-  var API = 'http://localhost:8000/edit';
+  // servido por el propio servidor -> ruta relativa; abierto como archivo -> servidor local por defecto
+  var API = location.protocol.indexOf('http') === 0 ? '/edit' : 'http://localhost:8000/edit';
+  $('endpoint').textContent = API;
   var files = { photo: null, reference: null };
   var urls = { photo: null, reference: null, result: null };
   var busy = false;
@@ -316,7 +363,7 @@
       $('name-' + kind).textContent = file.name;
       caption.hidden = false;
       wrap.classList.add('is-filled');
-      wrap.querySelectorAll('.zone-icon,.zone-title,.zone-hint').forEach(function (n) { n.hidden = true; });
+      wrap.querySelectorAll('.zone-icon,.zone-title,.zone-hint').forEach(function (n) { n.toggleAttribute('hidden', true); });
       hideResult();
       clearSay();
     }
@@ -329,7 +376,7 @@
       preview.hidden = true;
       caption.hidden = true;
       wrap.classList.remove('is-filled');
-      wrap.querySelectorAll('.zone-icon,.zone-title,.zone-hint').forEach(function (n) { n.hidden = false; });
+      wrap.querySelectorAll('.zone-icon,.zone-title,.zone-hint').forEach(function (n) { n.toggleAttribute('hidden', false); });
       hideResult();
     }
 
@@ -402,6 +449,15 @@
   cmpRange.addEventListener('input', function () { pos = parseInt(cmpRange.value, 10); paintCompare(); });
   paintCompare();
 
+  /* ---------- sugerencias de petición ---------- */
+  $('chips').addEventListener('click', function (e) {
+    var chip = e.target.closest('.chip');
+    if (!chip) return;
+    var ta = $('text'), v = ta.value.trim();
+    if (v.toLowerCase().indexOf(chip.textContent) === -1) ta.value = v ? v + ', ' + chip.textContent : chip.textContent;
+    ta.focus();
+  });
+
   /* ---------- resultado ---------- */
   function hideResult() {
     $('result').hidden = true;
@@ -413,6 +469,41 @@
     if (!isFinite(n)) { $(id).textContent = '—'; return null; }
     $(id).textContent = n.toFixed(4);
     return n;
+  }
+  function showRecipe(raw) {
+    var box = $('recipe'), shown = 0;
+    box.textContent = '';
+    var r = {};
+    try { r = JSON.parse(raw || '{}'); } catch (_) {}
+    Object.keys(r).forEach(function (k) {
+      var v = r[k];
+      // los parámetros "de fuerza" tienen un valor base distinto de 0; se muestran siempre
+      var always = /_strength$|skin_protect$/.test(k);
+      if (typeof v !== 'number' || (!always && Math.abs(v) < 0.005)) return;
+      var chip = document.createElement('span'), name = document.createElement('em');
+      name.textContent = k.replace(/_/g, ' ');
+      chip.appendChild(name);
+      chip.appendChild(document.createTextNode((v > 0 && !always ? '+' : '') + v.toFixed(2)));
+      box.appendChild(chip);
+      shown++;
+    });
+    if (!shown) {
+      var none = document.createElement('span');
+      none.className = 'none';
+      none.textContent = '—';
+      box.appendChild(none);
+    }
+  }
+  function showScore(d0, d1) {
+    var score = $('score'), num = $('score-num'), text = $('score-text');
+    if (d0 == null || d1 == null || d0 <= 0) { score.hidden = true; return; }
+    var gain = Math.round((1 - d1 / d0) * 100);
+    score.hidden = false;
+    num.classList.toggle('flat', gain <= 0);
+    num.textContent = Math.max(0, gain) + '%';
+    text.innerHTML = gain > 0
+      ? 'La foto está un <b>' + gain + '% más cerca</b> del estilo de la referencia que antes de editar.'
+      : 'La edición no ha acercado la foto a la referencia. Prueba con más intensidad o cambia la petición.';
   }
   function meter(id, value, max, good) {
     var dd = $(id);
@@ -460,6 +551,7 @@
           }
           return {
             note: res.headers.get('X-Note'),
+            recipe: res.headers.get('X-Recipe'),
             before: res.headers.get('X-Dist-Before'),
             after: res.headers.get('X-Dist-After'),
             blob: blob
@@ -484,6 +576,8 @@
         var top = Math.max(d0, d1);
         meter('dist-before', d0, top, false);
         meter('dist-after', d1, top, true);
+        showScore(d0, d1);
+        showRecipe(out.recipe);
 
         var down = $('download');
         down.href = urls.result;

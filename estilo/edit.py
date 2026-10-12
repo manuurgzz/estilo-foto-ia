@@ -1,6 +1,6 @@
 """Orquestador: foto + referencia + petición -> foto editada.
 CLI: python -m estilo.edit foto.jpg ref.jpg "más cálido" out.jpg"""
-import sys
+import argparse
 from . import llm, style
 from .recipe import Recipe
 
@@ -22,6 +22,18 @@ def edit(src_path, ref_path, text="", out_path=None, strength=1.0, use_llm=True)
     return {"recipe": recipe, "note": note, "dist_before": d0, "dist_after": d1}
 
 
+def main(argv=None):
+    ap = argparse.ArgumentParser(prog="python -m estilo.edit", description="Aplica el estilo de una referencia a una foto.")
+    ap.add_argument("foto")
+    ap.add_argument("referencia")
+    ap.add_argument("peticion", nargs="?", default="")
+    ap.add_argument("salida", nargs="?", default="out.jpg")
+    ap.add_argument("--intensidad", type=float, default=1.0, help="0..1 (por defecto 1)")
+    ap.add_argument("--sin-ia", action="store_true", help="no consultar al LLM local")
+    a = ap.parse_args(argv)
+    res = edit(a.foto, a.referencia, a.peticion, a.salida, min(1.0, max(0.0, a.intensidad)), use_llm=not a.sin_ia)
+    print(f"{a.salida}: {res['note']} · distancia {res['dist_before']:.3f} -> {res['dist_after']:.3f}")
+
+
 if __name__ == "__main__":
-    a = sys.argv[1:]
-    print(edit(a[0], a[1], a[2] if len(a) > 2 else "", a[3] if len(a) > 3 else "out.jpg"))
+    main()
