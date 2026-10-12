@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Estilo — editor de fotos</title>
+<style>
+  :root{
+    --bg:#0b0c0e;
+    --surface:#14161a;
+    --surface-2:#1a1d22;
+    --line:rgba(255,255,255,.09);
+    --line-strong:rgba(255,255,255,.18);
+    --text:#eceef1;
+    --muted:#969ca5;
+    --accent:#e0a458;
+    --danger:#e2705f;
+    --radius:20px;
+    --maxw:1040px;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --serif:ui-serif,Georgia,"Times New Roman",serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    font-size:15px;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+    font-weight:450;
+  }
+  img{display:block}
+  button,input,textarea{font:inherit;color:inherit}
+
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:clamp(28px,5vw,72px) clamp(18px,4vw,32px) 80px}
+
+  /* ---------- cabecera ---------- */
+  .eyebrow{
+    margin:0 0 18px;color:var(--muted);font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+  }
+  h1{
+    margin:0;font-family:var(--serif);font-weight:400;
+    font-size:clamp(30px,5vw,52px);line-height:1.08;letter-spacing:-.022em;max-width:22ch;
+  }
+  h1 em{font-style:italic}
+  .lede{margin:18px 0 0;color:var(--muted);max-width:52ch;font-size:16px}
+
+  /* ---------- zonas de imagen ---------- */
+  .zones{
+    display:grid;gap:18px;margin-top:clamp(34px,5vw,56px);
+    grid-template-columns:repeat(auto-fit,minmax(270px,1fr));
+  }
+  .zone{
+    position:relative;border:1px dashed var(--line-strong);border-radius:var(--radius);
+    background:var(--surface);min-height:206px;padding:22px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+    text-align:center;cursor:pointer;transition:border-color .18s,background-color .18s;
+  }
+  .zone:hover{border-color:rgba(255,255,255,.3)}
+  .zone.is-over{border-color:var(--accent);background:rgba(224,164,88,.07)}
+  .zone.is-filled{border-style:solid;border-color:var(--line);padding:0;overflow:hidden;align-items:stretch;justify-content:stretch}
+  .zone:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+  .zone .zone-icon{color:var(--muted);margin-bottom:4px}
+  .zone-title{font-size:15px;font-weight:500;letter-spacing:-.01em}
+  .zone-hint{margin:0;color:var(--muted);font-size:13px}
+  .zone-preview{width:100%;height:206px;object-fit:cover}
+  .zone-caption{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:11px 14px;background:var(--surface-2);font-size:13px;color:var(--muted);
+  }
+  .zone-caption b{color:var(--text);font-weight:500}
+  .zone-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .zone-clear{
+    border:0;background:none;color:var(--muted);cursor:pointer;padding:2px 6px;border-radius:999px;
+    font-size:12px;letter-spacing:.02em;flex:none;
+  }
+  .zone-clear:hover{color:var(--text);background:rgba(255,255,255,.07)}
+  input[type=file]{display:none}
+
+  /* ---------- petición y acciones ---------- */
+  .panel{margin-top:18px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px}
+  .field-label{
+    display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+    color:var(--muted);font-size:12px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:12px;
+  }
+  textarea{
+    width:100%;min-height:84px;resize:vertical;background:var(--bg);border:1px solid var(--line);
+    border-radius:14px;padding:13px 15px;line-height:1.5;
+  }
+  textarea::placeholder{color:rgba(150,156,165,.7)}
+  textarea:focus{outline:none;border-color:var(--line-strong)}
+
+  .slider-row{display:flex;align-items:center;gap:16px;margin-top:22px}
+  .slider-row label{flex:none;color:var(--muted);font-size:12px;letter-spacing:.12em;text-transform:uppercase}
+  output{
+    font-family:var(--mono);font-size:13px;color:var(--text);
+    margin-left:auto;flex:none;font-variant-numeric:tabular-nums;
+  }
+  input[type=range]{
+    -webkit-appearance:none;appearance:none;flex:1;min-width:120px;background:none;height:22px;cursor:pointer;
+  }
+  input[type=range]::-webkit-slider-runnable-track{
+    height:5px;border-radius:999px;
+    background:linear-gradient(to right,var(--accent) calc(var(--p,0)*100%),rgba(255,255,255,.16) 0);
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;width:17px;height:17px;border-radius:50%;
+    background:#fff;border:0;margin-top:-6px;box-shadow:0 1px 6px rgba(0,0,0,.5);
+  }
+  input[type=range]::-moz-range-track{height:5px;border-radius:999px;background:rgba(255,255,255,.16)}
+  input[type=range]::-moz-range-progress{height:5px;border-radius:999px;background:var(--accent)}
+  input[type=range]::-moz-range-thumb{
+    width:17px;height:17px;border-radius:50%;background:#fff;border:0;box-shadow:0 1px 6px rgba(0,0,0,.5);
+  }
+  input[type=range]:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:999px}
+
+  .actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:24px}
+  .btn{
+    border:1px solid transparent;border-radius:999px;padding:12px 24px;cursor:pointer;
+    font-weight:500;letter-spacing:-.005em;transition:opacity .15s,background-color .15s,color .15s;
+    display:inline-flex;align-items:center;gap:9px;text-decoration:none;
+  }
+  .btn-primary{background:var(--text);color:#0c0d0f}
+  .btn-primary:hover{opacity:.88}
+  .btn-ghost{background:none;color:var(--text);border-color:var(--line-strong)}
+  .btn-ghost:hover{background:rgba(255,255,255,.05)}
+  .btn[disabled],.btn[aria-disabled="true"]{opacity:.5;pointer-events:none}
+  .spinner{
+    width:13px;height:13px;border-radius:50%;border:2px solid rgba(0,0,0,.25);border-top-color:#0c0d0f;
+    animation:spin .7s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(1turn)}}
+
+  /* ---------- estado ---------- */
+  .status{margin:18px 0 0;color:var(--muted);font-size:14px;min-height:1.5em}
+  .status[hidden]{display:none}
+  .status.error{color:var(--danger)}
+
+  /* ---------- resultado ---------- */
+  .result{margin-top:clamp(34px,5vw,56px)}
+  .result[hidden]{display:none}
+  .compare{
+    --pct:50%;
+    position:relative;border-radius:var(--radius);overflow:hidden;background:#000;
+    border:1px solid var(--line);aspect-ratio:3/2;touch-action:none;user-select:none;cursor:ew-resize;
+  }
+  .cmp-img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+  .cmp-img.before{clip-path:inset(0 calc(100% - var(--pct)) 0 0)}
+  .cmp-tag{
+    position:absolute;bottom:14px;padding:5px 11px;border-radius:999px;
+    background:rgba(10,11,13,.6);backdrop-filter:blur(6px);
+    font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#fff;pointer-events:none;
+  }
+  .cmp-tag.left{left:14px}
+  .cmp-tag.right{right:14px}
+  .cmp-line{position:absolute;top:0;bottom:0;left:var(--pct);width:2px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+  .cmp-grip{
+    position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    width:42px;height:42px;border-radius:50%;border:0;background:#fff;color:#101215;
+    display:grid;place-items:center;cursor:ew-resize;box-shadow:0 3px 14px rgba(0,0,0,.45);padding:0;
+  }
+  .cmp-grip:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+  .compare-tools{display:flex;align-items:center;gap:14px;margin-top:14px}
+  .compare-tools label{flex:none;color:var(--muted);font-size:12px;letter-spacing:.12em;text-transform:uppercase}
+
+  .meta{margin:22px 0 0;display:grid;gap:2px}
+  .meta dt{color:var(--muted);font-size:12px;letter-spacing:.12em;text-transform:uppercase}
+  .meta dd{margin:2px 0 0;font-family:var(--mono);font-size:13px;color:var(--text);word-break:break-word}
+  .meta div{display:grid;grid-template-columns:minmax(150px,.4fr) 1fr;gap:14px;align-items:baseline;padding:10px 0;border-top:1px solid var(--line)}
+  .meter{display:inline-block;vertical-align:middle;width:min(220px,42%);height:4px;border-radius:999px;background:rgba(255,255,255,.14);margin-left:10px;overflow:hidden}
+  .meter i{display:block;height:100%;border-radius:999px;background:var(--muted)}
+  .meter i.good{background:var(--accent)}
+
+  footer{margin-top:56px;color:var(--muted);font-size:13px;border-top:1px solid var(--line);padding-top:18px}
+
+  @media (max-width:640px){
+    .meta div{grid-template-columns:1fr;gap:2px}
+    .meter{display:none}
+    .slider-row{flex-wrap:wrap}
+    output{margin-left:0}
+    input[type=range]{flex:1 1 100%}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<main class="wrap">
+
+  <header>
+    <p class="eyebrow">Estilo · editor</p>
+    <h1>Traslada el <em>estilo</em> de una referencia a tu foto.</h1>
+    <p class="lede">Sube una foto y una referencia: la primera adopta el color, el contraste y el grano de la segunda. Puedes afinar el resultado con una petición escrita.</p>
+  </header>
+
+  <section class="zones" aria-label="Imágenes de entrada">
+    <div class="zone" id="zone-photo" tabindex="0" role="button" aria-label="Foto: arrastra una imagen o pulsa para elegirla">
+      <svg class="zone-icon" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      <span class="zone-title">Foto</span>
+      <p class="zone-hint">Arrastra una imagen o haz clic para elegirla</p>
+      <img class="zone-preview" id="preview-photo" alt="Vista previa de la foto" hidden>
+      <div class="zone-caption" hidden>
+        <span class="zone-name" id="name-photo"></span>
+        <button type="button" class="zone-clear" id="clear-photo">Quitar</button>
+      </div>
+      <input type="file" id="file-photo" accept="image/*">
+    </div>
+
+    <div class="zone" id="zone-reference" tabindex="0" role="button" aria-label="Referencia: arrastra una imagen o pulsa para elegirla">
+      <svg class="zone-icon" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      <span class="zone-title">Referencia</span>
+      <p class="zone-hint">De aquí se toma el estilo</p>
+      <img class="zone-preview" id="preview-reference" alt="Vista previa de la referencia" hidden>
+      <div class="zone-caption" hidden>
+        <span class="zone-name" id="name-reference"></span>
+        <button type="button" class="zone-clear" id="clear-reference">Quitar</button>
+      </div>
+      <input type="file" id="file-reference" accept="image/*">
+    </div>
+  </section>
+
+  <section class="panel">
+    <span class="field-label" id="label-text">Petición</span>
+    <textarea id="text" placeholder="más cálido, contraste de película, menos saturación…" aria-labelledby="label-text"></textarea>
+
+    <div class="slider-row">
+      <label for="strength">Intensidad</label>
+      <input type="range" id="strength" min="0" max="1" step="0.01" value="0.8">
+      <output for="strength" id="strength-out">0.80</output>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="btn btn-primary" id="submit">Editar</button>
+    </div>
+
+    <p class="status" id="status" role="status" aria-live="polite" hidden></p>
+  </section>
+
+  <section class="result" id="result" hidden>
+    <div class="compare" id="compare">
+      <img class="cmp-img after" id="img-after" alt="Foto editada">
+      <img class="cmp-img before" id="img-before" alt="Foto original">
+      <span class="cmp-tag left">Antes</span>
+      <span class="cmp-tag right">Después</span>
+      <div class="cmp-line" id="cmp-line">
+        <button type="button" class="cmp-grip" id="cmp-grip" aria-label="Comparar antes y después: flechas izquierda y derecha" role="slider" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" aria-orientation="horizontal" tabindex="0">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6 4 12l5 6M15 6l5 6-5 6"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="compare-tools">
+      <label for="cmp-range">Comparar</label>
+      <input type="range" id="cmp-range" min="0" max="100" step="0.5" value="50">
+    </div>
+
+    <dl class="meta">
+      <div><dt>Nota</dt><dd id="note">—</dd></div>
+      <div><dt>X-Dist-Before</dt><dd id="dist-before">—</dd></div>
+      <div><dt>X-Dist-After</dt><dd id="dist-after">—</dd></div>
+    </dl>
+
+    <div class="actions">
+      <a class="btn btn-ghost" id="download" download="editada.jpg" href="#">Descargar resultado</a>
+    </div>
+  </section>
+
+  <footer>POST a <code>http://localhost:8000/edit</code> · campos <code>photo</code>, <code>reference</code>, <code>text</code>, <code>strength</code></footer>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+
+  var API = 'http://localhost:8000/edit';
+  var files = { photo: null, reference: null };
+  var urls = { photo: null, reference: null, result: null };
+  var busy = false;
+
+  /* ---------- utilidades ---------- */
+  function say(msg, isError) {
+    var el = $('status');
+    el.hidden = false;
+    el.textContent = msg;
+    el.classList.toggle('error', !!isError);
+  }
+  function clearSay() {
+    var el = $('status');
+    el.hidden = true;
+    el.textContent = '';
+    el.classList.remove('error');
+  }
+  function isImage(file) {
+    return file && file.type && file.type.indexOf('image/') === 0;
+  }
+
+  /* ---------- zonas de imagen ---------- */
+  function zone(kind) {
+    var wrap = $('zone-' + kind);
+    var input = $('file-' + kind);
+    var preview = $('preview-' + kind);
+    var caption = $('name-' + kind).parentNode;
+
+    function show(file) {
+      if (!isImage(file)) { say('Elige un archivo de imagen (jpg, png, webp…).', true); return; }
+      if (urls[kind]) { URL.revokeObjectURL(urls[kind]); urls[kind] = null; }
+      urls[kind] = URL.createObjectURL(file);
+      files[kind] = file;
+      preview.src = urls[kind];
+      preview.hidden = false;
+      $('name-' + kind).textContent = file.name;
+      caption.hidden = false;
+      wrap.classList.add('is-filled');
+      wrap.querySelectorAll('.zone-icon,.zone-title,.zone-hint').forEach(function (n) { n.hidden = true; });
+      hideResult();
+      clearSay();
+    }
+    function clear(file) {
+      if (file) { file.preventDefault(); file.stopPropagation(); }
+      files[kind] = null;
+      if (urls[kind]) { URL.revokeObjectURL(urls[kind]); urls[kind] = null; }
+      input.value = '';
+      preview.removeAttribute('src');
+      preview.hidden = true;
+      caption.hidden = true;
+      wrap.classList.remove('is-filled');
+      wrap.querySelectorAll('.zone-icon,.zone-title,.zone-hint').forEach(function (n) { n.hidden = false; });
+      hideResult();
+    }
+
+    input.addEventListener('change', function () { if (input.files && input.files[0]) show(input.files[0]); });
+    $('clear-' + kind).addEventListener('click', clear);
+
+    wrap.addEventListener('click', function (e) { if (e.target.closest('.zone-clear')) return; input.click(); });
+    wrap.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); }
+    });
+    ['dragenter', 'dragover'].forEach(function (type) {
+      wrap.addEventListener(type, function (e) { e.preventDefault(); wrap.classList.add('is-over'); });
+    });
+    ['dragleave', 'dragend'].forEach(function (type) {
+      wrap.addEventListener(type, function () { wrap.classList.remove('is-over'); });
+    });
+    wrap.addEventListener('drop', function (e) {
+      e.preventDefault();
+      wrap.classList.remove('is-over');
+      var dt = e.dataTransfer;
+      if (dt && dt.files && dt.files[0]) show(dt.files[0]);
+      else say('No has soltado ningún archivo.', true);
+    });
+  }
+  zone('photo');
+  zone('reference');
+
+  /* ---------- slider de intensidad ---------- */
+  var strength = $('strength'), strengthOut = $('strength-out');
+  function paintStrength() {
+    strength.style.setProperty('--p', strength.value);
+    strengthOut.value = parseFloat(strength.value).toFixed(2);
+  }
+  strength.addEventListener('input', paintStrength);
+  paintStrength();
+
+  /* ---------- comparador antes/después ---------- */
+  var compare = $('compare'), grip = $('cmp-grip'), cmpRange = $('cmp-range'), pos = 50;
+
+  function paintCompare() {
+    compare.style.setProperty('--pct', pos + '%');
+    cmpRange.style.setProperty('--p', pos / 100);
+    cmpRange.value = pos;
+    grip.setAttribute('aria-valuenow', Math.round(pos));
+  }
+  function setPos(clientX) {
+    var r = compare.getBoundingClientRect();
+    pos = Math.max(0, Math.min(100, (clientX - r.left) / r.width * 100));
+    paintCompare();
+  }
+  compare.addEventListener('pointerdown', function (e) {
+    e.preventDefault();
+    compare.setPointerCapture(e.pointerId);
+    setPos(e.clientX);
+  });
+  compare.addEventListener('pointermove', function (e) {
+    if (compare.hasPointerCapture(e.pointerId)) setPos(e.clientX);
+  });
+  grip.addEventListener('keydown', function (e) {
+    var step = e.shiftKey ? 10 : 2, next = pos;
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') next -= step;
+    else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') next += step;
+    else if (e.key === 'Home') next = 0;
+    else if (e.key === 'End') next = 100;
+    else return;
+    e.preventDefault();
+    pos = Math.max(0, Math.min(100, next));
+    paintCompare();
+  });
+  cmpRange.addEventListener('input', function () { pos = parseInt(cmpRange.value, 10); paintCompare(); });
+  paintCompare();
+
+  /* ---------- resultado ---------- */
+  function hideResult() {
+    $('result').hidden = true;
+    if (urls.result) { URL.revokeObjectURL(urls.result); urls.result = null; }
+  }
+  function setDist(id, value) {
+    if (value == null) { $(id).textContent = '—'; return null; }
+    var n = parseFloat(value);
+    if (!isFinite(n)) { $(id).textContent = '—'; return null; }
+    $(id).textContent = n.toFixed(4);
+    return n;
+  }
+  function meter(id, value, max, good) {
+    var dd = $(id);
+    var old = dd.querySelector('.meter');
+    if (old) old.remove();
+    if (value == null || !max) return;
+    var span = document.createElement('span');
+    span.className = 'meter';
+    var bar = document.createElement('i');
+    if (good) bar.className = 'good';
+    bar.style.width = Math.max(1, Math.min(100, value / max * 100)) + '%';
+    span.appendChild(bar);
+    dd.appendChild(span);
+  }
+
+  /* ---------- envío ---------- */
+  var submitBtn = $('submit');
+  submitBtn.addEventListener('click', function () {
+    if (busy) return;
+    if (!files.photo || !files.reference) {
+      say('Hace falta una foto y una referencia.', true);
+      return;
+    }
+    var fd = new FormData();
+    fd.append('photo', files.photo, files.photo.name);
+    fd.append('reference', files.reference, files.reference.name);
+    fd.append('text', $('text').value.trim());
+    fd.append('strength', strength.value);
+
+    busy = true;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner"></span>Editando…';
+    say('Editando…');
+
+    fetch(API, { method: 'POST', body: fd })
+      .then(function (res) {
+        if (!res.ok) {
+          return res.text().then(function (t) {
+            throw new Error('El servidor respondió ' + res.status + (t ? ': ' + t.slice(0, 200) : ''));
+          });
+        }
+        return res.blob().then(function (blob) {
+          if (blob.type && blob.type.indexOf('image/') !== 0) {
+            return blob.text().then(function (t) { throw new Error('Respuesta inesperada: ' + (t.slice(0, 200) || blob.type)); });
+          }
+          return {
+            note: res.headers.get('X-Note'),
+            before: res.headers.get('X-Dist-Before'),
+            after: res.headers.get('X-Dist-After'),
+            blob: blob
+          };
+        });
+      })
+      .then(function (out) {
+        if (urls.result) URL.revokeObjectURL(urls.result);
+        urls.result = URL.createObjectURL(out.blob);
+
+        var img = $('img-after');
+        img.onload = function () {
+          compare.style.aspectRatio = img.naturalWidth + ' / ' + img.naturalHeight;
+        };
+        img.src = urls.result;
+        img.alt = 'Foto editada: ' + (files.photo ? files.photo.name : 'resultado');
+        $('img-before').src = urls.photo;
+
+        $('note').textContent = out.note || '—';
+        var d0 = setDist('dist-before', out.before);
+        var d1 = setDist('dist-after', out.after);
+        var top = Math.max(d0, d1);
+        meter('dist-before', d0, top, false);
+        meter('dist-after', d1, top, true);
+
+        var down = $('download');
+        down.href = urls.result;
+        down.download = 'editada.' + ((out.blob.type || 'image/jpeg').split('/')[1] || 'jpg');
+
+        pos = 50;
+        paintCompare();
+        $('result').hidden = false;
+        clearSay();
+      })
+      .catch(function (err) {
+        hideResult();
+        say(err && err.name === 'TypeError'
+          ? 'No se pudo conectar con ' + API + '. ¿Está el servidor en marcha?'
+          : (err && err.message ? err.message : 'Error inesperado al editar.'), true);
+      })
+      .then(function () {
+        busy = false;
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Editar';
+      });
+  });
+})();
+</script>
+</body>
+</html>
