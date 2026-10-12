@@ -32,6 +32,17 @@ def test_receta_acota_y_descarta_basura():
     assert Recipe.from_dict(None).temp == 0
 
 
+def test_bandas_no_cambian_el_resultado():
+    """El procesado por bandas debe dar lo mismo con cualquier altura de banda (vignette y paleta incluidas)."""
+    r = Recipe(contrast=.3, shadows=.2, vignette=.4, saturation=.1)
+    antes, style._BAND = style._BAND, 7
+    try:
+        a = style.apply(src, r, rf)
+    finally:
+        style._BAND = antes
+    assert np.abs(a - style.apply(src, r, rf)).max() < 1e-5
+
+
 def test_imagenes_de_borde():
     for img in (np.full((1, 1, 3), .5, np.float32), np.full((3, 3, 3), .5, np.float32), np.zeros((128, 128, 3), np.float32)):
         o = style.apply(img, Recipe(vignette=.5), style.features(img))
