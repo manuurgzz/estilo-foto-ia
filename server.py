@@ -1,18 +1,21 @@
 """API local: POST /edit (foto + referencia -> JPEG) y GET /health. Sin BD ni autenticación."""
 import json
 import tempfile
+from dataclasses import asdict
 from pathlib import Path
 
 import uvicorn
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
+from fastapi.concurrency import run_in_threadpool
 from fastapi.staticfiles import StaticFiles
 
 from estilo import edit, llm
 
 app = FastAPI(title="estilo-foto-ia")
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+EXPOSED = ["X-Recipe", "X-Note", "X-Dist-Before", "X-Dist-After"]  # sin esto el navegador oculta las cabeceras a un origen distinto (file://)
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"], expose_headers=EXPOSED)
 
 MAX_MB = 30  # techo por archivo: por encima no es una foto de cámara
 
@@ -55,7 +58,8 @@ async def edit_photo(photo: UploadFile = File(...), reference: UploadFile = File
         out = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
         out.close()  # PIL deduce el formato de la extensión: fuera .jpg o falla style.save
         paths.append(out.name)
-        res = edit.edit(src, ref, text, out.name, min(1.0, max(0.0, strength)))
+        # el procesado es CPU puro y tarda segundos: fuera del bucle de eventos para no bloquear /health
+        res = await run_in_threadpool(edit.edit, src, ref, text, out.name, min(1.0, max(0.0, strength)))
         jpeg = Path(out.name).read_bytes()
     except (OSError, ValueError) as e:  # foto corrupta o no imagen: frontera de confianza
         raise HTTPException(400, f"imagen no procesable: {e}") from e
@@ -63,7 +67,7 @@ async def edit_photo(photo: UploadFile = File(...), reference: UploadFile = File
         for p in paths:
             Path(p).unlink(missing_ok=True)
     return Response(jpeg, media_type="image/jpeg", headers={
-        "X-Recipe": _h(json.dumps(res["recipe"].__dict__)),
+        "X-Recipe": _h(json.dumps(asdict(res["recipe"]))),
         "X-Note": _h(res["note"]),
         "X-Dist-Before": _h(f'{res["dist_before"]:.6f}'),
         "X-Dist-After": _h(f'{res["dist_after"]:.6f}'),
